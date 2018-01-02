@@ -8,7 +8,8 @@
 Our state is:
 - currentLetter
 - mysteryWord
-
+- incorrect guesses
+- gameOver
 
 */
 
@@ -22,6 +23,7 @@ import hangman3 from './images/145px-Hangman-3.png';
 import hangman4 from './images/145px-Hangman-4.png';
 import hangman5 from './images/145px-Hangman-5.png';
 import hangman6 from './images/145px-Hangman-6.png';
+import hangmanWords from './data/words.json';
 import './App.css';
 
 class Header extends Component {
@@ -40,6 +42,14 @@ class DrawHangman extends Component {
   }
 }
 
+class Status extends Component {
+  render() {
+     return (
+       <Col className='status'>{this.props.status}</Col>
+     );
+  }
+}
+
 class MysteryWord extends Component {
   render() {
     return (
@@ -55,7 +65,7 @@ class Guesses extends Component {
   render() {
     return (
       <div>
-        <Col className='guesses'>Guesses: {this.props.letters}</Col>
+        <Col className='guesses'>Incorrect guesses: {this.props.letters}</Col>
       </div>
     );
   }
@@ -76,11 +86,10 @@ class Game extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      word: 'hangman',
-      mystery: '_ _ _ _ _ _ _',
-      letters: ['e', 'o', 'u'],
-      value: '',
-      drawingIndex: 0,
+      wordArray: generateMysteryWord(),
+      letters: [], /* stores wrong guesses */
+      value: '',   /* input letter */
+      gameOver: false,
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -88,34 +97,39 @@ class Game extends Component {
   }
 
   handleChange(e) {
-    this.setState({value: e.target.value.toUpperCase()});
+    const letters = this.state.letters.slice();
+    const wordArray = this.state.wordArray.slice();
+    this.setState({
+      value: e.target.value.toUpperCase(),
+      letters: letters,
+      wordArray: wordArray,
+    });
   }
 
   handleSubmit(e) {
-    console.log('letter entered: ' + this.state.value);
+    console.log('you entered: ' + this.state.value);
     e.preventDefault();
   }
 
   render() {
-/*    const score = this.state.score;
-    generateMove(this.state.board);
-    const result = calculateWinner(this.state);
+    const word     = this.state.wordArray[0];
+    const mystery  = this.state.wordArray[1];
+    const letters  = this.state.letters;
+    const drawings = [hangman0, hangman1, hangman2, hangman3, hangman4, hangman5, hangman6];
+    const result = analyseGuess(this.state);
     let status;
     if (result) {
-      status = result;
+        status = result;
     } else {
-      status = 'Next move: ' + (this.state.computerIsNext ? 'Computer' : 'Player');
+        status = '';
     }
-*/
-    const word = this.state.word;
-    const mystery = this.state.mystery;
-    const letters = this.state.letters;
-    const drawings = [hangman0, hangman1, hangman2, hangman3, hangman4, hangman5, hangman6];
+
     return (
       <Grid className='grid'>
         <Header />
         <div className='hangman-panel'>
-          <DrawHangman value={drawings[this.state.drawingIndex]} /> 
+          <DrawHangman value={drawings[this.state.letters.length]} />
+          <Status status={status} />
         </div>
         <div className='word-panel'>
           <MysteryWord word={word} mystery={mystery} />
@@ -130,6 +144,7 @@ class Game extends Component {
               required
               value={this.state.value}
               onChange={this.handleChange}
+              disabled={this.state.gameOver}
             />
           </form>
         </div>
@@ -146,42 +161,73 @@ class App extends Component {
     );
   }
 }
-/*
-function calculateWinner(state) {
-  const playerMove = state.board[0];
-  const computerMove = state.board[1];
-  if ((playerMove == null) && (computerMove === '?')) {
+
+function generateMysteryWord() {
+  /* Returns an array as follows:
+   *  [word, mystery]
+   *
+   *  word contains the mystery word, e.g. ELASTIC
+   *  mystery contains the current state of the solution, e.g., EL**T*C
+   */
+  var len = hangmanWords.length; /* length of global array */
+  var random = Math.floor(Math.random() * len);
+  var word = hangmanWords[random];
+  word = word.replace(/-/g, ""); /* remove hyphens */
+  word = word.toUpperCase();
+
+  var mystery = '';
+  for (var i=0; i < word.length; i++) {
+    mystery = mystery + '*';
+  }
+
+  return [word, mystery];
+}
+
+function analyseGuess(state) {
+  const word    = state.wordArray[0];
+  const mystery = state.wordArray[1];
+  const letters = state.letters;
+  const guess   = state.value;
+
+  var re = new RegExp(guess, 'g');
+  var result = word.search(re);
+  
+  if (state.letters.length >= 6) {
+
+    state.gameOver = true;
+    return 'Game Over.  Solution: ' + word;
+
+  } else if (word === mystery) {
+
+    state.gameOver = true;
+    return 'Congratulations!';
+
+  } else if (guess === '') {
+
     return null;
-  } else {
-    if (playerMove === computerMove) {
-      state.score[2]++;
-      return 'Draw';
-    } else {
-      if (((playerMove === 'Rock') && (computerMove === 'Scissors')) ||
-          ((playerMove === 'Paper') && (computerMove === 'Rock')) ||
-          ((playerMove === 'Scissors') && (computerMove === 'Paper'))) {
-        state.score[0]++;
-        return 'Player wins';
-      } else {
-        state.score[1]++;
-        return 'Computer wins';
-      }
-    }
+
+  } else if (letters.indexOf(guess) > -1) {
+
+    return 'You already guessed ' + guess;
+    
+  } else if (result === -1) {
+
+    /* did not find a match */
+    state.letters.push(guess);
+    return 'Sorry, no match!';
+
+  } else if (result >= 0) {
+
+    /* found at least one match */
+    var newstr = replaceChar(mystery, result, guess);
+    state.wordArray[1] = newstr;
+    return 'Yup, found letter ' + guess + ' ...   :)';
   }
 }
 
-function generateMove(board) {
-
-  const objects = ['Rock', 'Paper', 'Scissors'];
-  if (board[0] == null) {
-    return null;
-  } else {
-    var random = Math.floor(Math.random() * 3);
-    board[1] = objects[random];
-    return board;
-  }
+function replaceChar(str, index, chr) {
+      if (index > str.length - 1) return str;
+      return str.substr(0, index) + chr + str.substr(index + 1);
 }
-
-*/
 
 export default App;
