@@ -24,6 +24,7 @@ import hangman4 from './images/145px-Hangman-4.png';
 import hangman5 from './images/145px-Hangman-5.png';
 import hangman6 from './images/145px-Hangman-6.png';
 import hangmanWords from './data/words.json';
+import messages from './data/messages.json';
 import './App.css';
 
 class Header extends Component {
@@ -54,7 +55,7 @@ class MysteryWord extends Component {
   render() {
     return (
       <div>
-        <Col className='word'>Mystery word: {this.props.word}</Col>
+        <Col className='word'>Mystery word: </Col>
         <Col className='word'>{this.props.mystery}</Col>
       </div>
     );
@@ -112,11 +113,11 @@ class Game extends Component {
   }
 
   render() {
+    const result   = analyseGuess(this.state);
     const word     = this.state.wordArray[0];
     const mystery  = this.state.wordArray[1];
     const letters  = this.state.letters;
     const drawings = [hangman0, hangman1, hangman2, hangman3, hangman4, hangman5, hangman6];
-    const result = analyseGuess(this.state);
     let status;
     if (result) {
         status = result;
@@ -145,6 +146,8 @@ class Game extends Component {
               value={this.state.value}
               onChange={this.handleChange}
               disabled={this.state.gameOver}
+              alt='Enter one letter'
+              autoFocus
             />
           </form>
         </div>
@@ -189,9 +192,14 @@ function analyseGuess(state) {
   const letters = state.letters;
   const guess   = state.value;
 
-  var re = new RegExp(guess, 'g');
-  var result = word.search(re);
-  
+  var indices = [];
+  for (var i=0; i < word.length; i++) {
+    if (word[i] === guess) indices.push(i);
+  }
+ 
+  var re = new RegExp('[A-Z]');
+  var validInput = guess.search(re);
+
   if (state.letters.length >= 6) {
 
     state.gameOver = true;
@@ -200,34 +208,52 @@ function analyseGuess(state) {
   } else if (word === mystery) {
 
     state.gameOver = true;
-    return 'Congratulations!';
+    var len = messages.length; /* length of global array */
+    var random = Math.floor(Math.random() * len);
+    var randomMessage = messages[random];
+    console.log(messages);
+    return randomMessage;
 
   } else if (guess === '') {
 
     return null;
 
+  } else if (validInput === -1) {
+
+    return 'Alphabetical characters only, please';
+
   } else if (letters.indexOf(guess) > -1) {
 
     return 'You already guessed ' + guess;
     
-  } else if (result === -1) {
+  } else if (indices.length === 0) {
 
     /* did not find a match */
     state.letters.push(guess);
-    return 'Sorry, no match!';
+    return 'Sorry, no match...  :(';
 
-  } else if (result >= 0) {
+  } else if (indices.length > 0) {
 
     /* found at least one match */
-    var newstr = replaceChar(mystery, result, guess);
-    state.wordArray[1] = newstr;
-    return 'Yup, found letter ' + guess + ' ...   :)';
+    var count = indices.length;
+    indices.forEach(function(item, index, indices) {
+      state.wordArray[1] = replaceChar(state.wordArray[1], item, guess);
+    });
+
+    /* make output more grammatical! */
+    var guessString = guess;
+    if (count > 1)  guessString = guessString + "'s";
+
+    console.log('indices ' + indices);
+    return 'Yup, found ' + count + ' ' + guessString + ' ...   :)';
   }
 }
 
 function replaceChar(str, index, chr) {
-      if (index > str.length - 1) return str;
-      return str.substr(0, index) + chr + str.substr(index + 1);
+  if (index > str.length - 1) return str;
+  var newstr = str.substr(0, index) + chr + str.substr(index + 1);
+  console.log('Replacing character ' + newstr);
+  return newstr;
 }
 
 export default App;

@@ -37,20 +37,20 @@ small {
   background-color: #642EFE;
   height: 200px;
   color: white;
-  padding: 20px;
+  padding: 5px 15px 10px 15px; /* top right bottom left */
   border: 3px solid;
 } 
 
 .hangman {
   display: block;
-  margin-left: 25px;
+  margin-left: 20px;
 }
 
 .word-panel {
   background-color: #5882FA;
-  height: 140px;
+  height: 130px;
   color: white;
-  padding:  20px;
+  padding:  15px;
   border: 3px solid;
 }
 
@@ -61,7 +61,7 @@ small {
 
 .guesses {
   font-size: 1.2em;
-  margin-top: 5px;
+  margin-top: 20px;
 }
 
 .enter {
