@@ -191,6 +191,7 @@ function analyseGuess(state) {
   const mystery = state.wordArray[1];
   const letters = state.letters;
   const guess   = state.value;
+  const numb    = ['zero', 'one', 'two', 'three', 'four', 'five'];
 
   var indices = [];
   for (var i=0; i < word.length; i++) {
@@ -230,7 +231,7 @@ function analyseGuess(state) {
 
     /* did not find a match */
     state.letters.push(guess);
-    return 'Sorry, no match...  :(';
+    return 'Sorry, did not find ' + guess + ' ...  :(';
 
   } else if (indices.length > 0) {
 
@@ -245,7 +246,7 @@ function analyseGuess(state) {
     if (count > 1)  guessString = guessString + "'s";
 
     console.log('indices ' + indices);
-    return 'Yup, found ' + count + ' ' + guessString + ' ...   :)';
+    return 'Yes, found ' + numb[count] + ' ' + guessString + ' ...   :)';
   }
 }
 
